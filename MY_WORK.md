@@ -158,16 +158,16 @@
 
 ---
 
-### Entry 3 - [Date and Time]
-**What I did**:
+### Entry 3 - [November 5  11:43]
+**What I did**: Implemented Feature 2: protected the shared statistics in SharedStats with mutex locks
 
-**Details**:
+**Details**: I added one ReentrantLock per shared variable and wrapped the three update methods and the three getters in lock() / try / finally / unlock(). I used separate locks because the variables are independent, so threads don't block each other for no reason.
 
-**Challenges**:
+**Challenges**:Deciding between one lock for all three variables or one lock per variable.
 
-**Solution**:
+**Solution**:I chose one lock per variable, since no thread ever needs two of them at once.
 
-**Time spent**:
+**Time spent**: 40 minutes
 
 ---
 
