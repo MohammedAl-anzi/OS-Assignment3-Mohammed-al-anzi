@@ -171,16 +171,17 @@
 
 ---
 
-### Entry 4 - [Date and Time]
-**What I did**:
+### Entry 4 - [November 5  12:43]
+**What I did**:replaced busy waiting in the CPUs with a counting semaphore.
 
-**Details**:
+**Details**: I added a Semaphore in ReadyQueue that counts the waiting processes: add() calls release() and each CPU calls acquire() before taking a process, so the polling code with sleep(20) is removed. For shutdown, the CPU that sees all processes completed calls release(totalCPUs) to wake the others, and a CPU woken that way stops instead of polling.
 
-**Challenges**:
 
-**Solution**:
+**Challenges**: Choosing the initial value of the semaphore
 
-**Time spent**:
+**Solution**: The initial value is 0 because the queue starts empty
+
+**Time spent**: 1 hour 
 
 ---
 
