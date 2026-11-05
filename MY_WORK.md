@@ -130,7 +130,7 @@
 
 ---
 
-## Your Development Log
+## Your Development Log3
 
 ### Entry 1 - [November 5 10:18]
 **What I did**: made the fork and set up my student id and edeit my_work
@@ -145,16 +145,16 @@
 
 ---
 
-### Entry 2 - [Date and Time]
-**What I did**:
+### Entry 2 - [November 5 11:03]
+**What I did**:Implemented Feature 1: protected the shared ready queue ReadyQueue ReentrantLock mutex.
 
-**Details**:
+**Details**: I declared one ReentrantLock protecting both list and map, and wrapped add(), poll(), processOf() and snapshot() in lock() try,finally,unlock(). This makes reading and removing the head in poll() one atomic step, and it protects the loop in snapshot().
 
-**Challenges**:
+**Challenges**:none
 
-**Solution**:
+**Solution**:none
 
-**Time spent**:
+**Time spent**:40 minutws
 
 ---
 

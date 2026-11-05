@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
-// TODO (Feature 1 and Feature 2): import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantLock;   // Feature 1 (also needed by Feature 2)
 // TODO (Feature 3):               import java.util.concurrent.Semaphore;
 
 // ANSI Color Codes for enhanced terminal output (same as Assignment 1)
@@ -108,19 +108,25 @@ class ReadyQueue {
     private final LinkedList<Thread> list = new LinkedList<>();   // FIFO queue of threads
     private final Map<Thread, Process> map = new HashMap<>();     // thread -> process (same idea as Assignment 1)
 
-    // TODO Feature 1: declare the lock protecting `list` and `map` here
+    // Feature 1: ONE mutex protecting BOTH `list` and `map` here  
+    private final ReentrantLock lock = new ReentrantLock();
 
     // TODO Feature 3: declare the counting semaphore that counts the processes waiting in the ready queue here
 
     // Add a process to the ready queue (new process, or a process that did not finish its quantum)
     public void add(Process process) {
-        // TODO Feature 1: protect this critical section
         Thread thread = new Thread(process);
-        list.add(thread);
-        map.put(thread, process);
+        lock.lock();                          // Feature 1: enter the critical section
+        try {
+            list.add(thread);
+            map.put(thread, process);
+        } finally {
+            lock.unlock();                    // Feature 1: always released, even if an exception occurs
+        }
 
         // TODO Feature 3: signal that one more process is available in the queue
 
+        // (printing stays outside the lock so we never hold the lock during I/O)
         System.out.println(Colors.BLUE + "  ➕ " + Colors.BOLD + Colors.CYAN + process.getName() + Colors.RESET +
                 Colors.BLUE + " (Priority: " + process.getPriority() + ") added to ready queue" + Colors.RESET +
                 " │ Remaining: " + Colors.YELLOW + process.getRemainingTime() + "ms" + Colors.RESET +
@@ -129,30 +135,42 @@ class ReadyQueue {
 
     // Remove and return the thread at the head of the queue (or null if the queue is empty)
     public Thread poll() {
-        // TODO Feature 1: protect this critical section
-        if (list.isEmpty()) {
-            return null;
+        lock.lock();                          // Feature 1: "read the head" + "remove the head" must be ONE atomic step
+        try {
+            if (list.isEmpty()) {
+                return null;                  // the finally block still releases the lock
+            }
+            Thread head = list.getFirst();      // 1) read the head of the queue
+            RaceWindow.pause();                 //    no other CPU can enter here anymore: the lock is held
+            list.removeFirst();                 // 2) remove the head (it is guaranteed to be the same thread)
+            return head;
+        } finally {
+            lock.unlock();
         }
-        Thread head = list.getFirst();      // 1) read the head of the queue
-        RaceWindow.pause();                 //    <- another CPU can read the SAME head here
-        list.removeFirst();                 // 2) remove the head (it may be a different thread by now!)
-        return head;
     }
 
     public Process processOf(Thread thread) {
-        // TODO Feature 1: protect this access
-        return map.get(thread);
+        lock.lock();                          // Feature 1: protect the access to `map`
+        try {
+            return map.get(thread);
+        } finally {
+            lock.unlock();
+        }
     }
 
     // Names of the processes currently waiting in the queue (used to display the ready queue)
     public String snapshot() {
-        // TODO Feature 1: protect this critical section
-        StringBuilder sb = new StringBuilder();
-        for (Thread t : list) {
-            if (sb.length() > 0) sb.append(" → ");
-            sb.append(map.get(t).getName());
+        lock.lock();                          // Feature 1: iterating over `list` is also a critical section
+        try {                                 // (otherwise a ConcurrentModificationException can occur)
+            StringBuilder sb = new StringBuilder();
+            for (Thread t : list) {
+                if (sb.length() > 0) sb.append(" → ");
+                sb.append(map.get(t).getName());
+            }
+            return sb.length() == 0 ? "empty" : sb.toString();
+        } finally {
+            lock.unlock();
         }
-        return sb.length() == 0 ? "empty" : sb.toString();
     }
 }
 
