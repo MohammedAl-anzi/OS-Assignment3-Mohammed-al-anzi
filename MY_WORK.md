@@ -32,11 +32,11 @@
 
 | Field | Your Answer |
 |-------|-------------|
-| **Full Name** | [Write your full name here] |
-| **Student ID** | [Write your student ID here] |
-| **University Email** | [yourid]@std.psau.edu.sa |
-| **GitHub Username** | [your-github-username] |
-| **Repository Link** | [Paste your repository link here] |
+| **Full Name** | Mohammed Bsher Al-Anzi |
+| **Student ID** | 444050882 |
+| **University Email** | 444050882@std.psau.edu.sa |
+| **GitHub Username** | MohammedAl-anzi |
+| **Repository Link** | https://github.com/MohammedAl-anzi/OS-Assignment3-Mohammed-al-anzi |
  
 ---
 
@@ -132,16 +132,16 @@
 
 ## Your Development Log
 
-### Entry 1 - [Date and Time]
-**What I did**:
+### Entry 1 - [November 5 10:18]
+**What I did**: made the fork and set up my student id and edeit my_work
 
-**Details**:
+**Details**:i have gone to the main represotory and made the fork, made sure its public and the name format is correct. Then i set up the vs code and changed the student id. and finaly i insert my infos at my_work and now writing entry 1 log
 
-**Challenges**:
+**Challenges**: none 
 
-**Solution**:
+**Solution**:none needed
 
-**Time spent**:
+**Time spent**:30 miuntes
 
 ---
 
