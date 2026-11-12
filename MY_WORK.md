@@ -42,7 +42,7 @@
 
 ## 🎥 Video Link
 
-**Video Link**: [Paste your video link here]
+**Video Link**: https://youtu.be/zx9DcnNF7zM
 
 > ⚠️ **WARNING:** The video must be **publicly accessible** ("Anyone with the link can view") on **Google Drive**, **YouTube (Unlisted or Public)** or any other cloud file-sharing system. A private, restricted or broken link counts as a **missing video (-1 mark)**.
 >
@@ -185,16 +185,16 @@
 
 ---
 
-### Entry 5 - [Date and Time]
-**What I did**:
+### Entry 5 - [November 12  4:20]
+**What I did**: edit the code and made the video and finlay finshed My_work
 
-**Details**:
+**Details**:the viedo reqiured some methods to be in a spicidc sructure so I had to edit it. also i answered all Qs in my_work and checked everything
 
-**Challenges**:
+**Challenges**: none
 
-**Solution**:
+**Solution**: none
 
-**Time spent**:
+**Time spent**: 1 hour
 
 ---
 
@@ -241,7 +241,7 @@
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+I learned that when threads share data without protection, they can give wrong results. For example, count++ reads, changes, and writes a value, so two threads can overwrite each others update (a race condition). I fixed this by putting the shared code in a critical section with a ReentrantLock, using try/finally so the lock is always released. A counting semaphore also let me limit how many threads can use something at the same time. I was surprised that the starter didnt crash, it just gave wrong numbers that changed each run.
 
 ## Question 2: What was the most challenging part of this assignment?
 
@@ -249,7 +249,7 @@
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+The most challenging part was choosing how many locks to use in SharedStats. One lock for everything is easy, but it makes threads wait for each other even when they touch different variables. One lock per variable is faster, but I had to be careful that each variable always used its own lock. It was hard because the code worked either way, so I couldn’t tell right away which choice was better. In the end I used one lock per shared variable, and it made me think about what each thread really needs to protect.
 
 ## Question 3: How did you overcome the challenges you faced?
 
@@ -257,7 +257,7 @@
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+I worked on one feature at a time and tested after each small change, so I always knew which change caused a problem. I ran the program several times, because concurrency bugs can show up in one run and not in the next. I also foucsed System.out.println lines to see what each thread was doing. When I was unsure about the locks, I re-read the slides. For the lock choice, I compared one lock for everything against one lock per variable, then picked the safer and faster one.
 
 ## Question 4: Where can synchronization concepts be applied in real-world applications?
 
@@ -265,7 +265,7 @@
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+Synchronization is used anywhere many users or programs change the same data. In a bank, two transfers on the same account must not overwrite each other, so the balance update is a critical section protected by a lock, like my SharedStats. In ticket or seat booking, a lock stops two people from buying the same seat. A print queue is like my ReadyQueue, because many programs add jobs to it and only one change should happen at a time. A counting semaphore works like a limit on connections to a database or website, where only a fixed number of users are allowed in at once.
 
 ### Optional: What would you like to learn more about?
 
@@ -299,17 +299,28 @@
 
 **Your Answer:** *(3-5 sentences)*
 
-[Write your answer here.]
+In my starter run, all three counters were wrong (context switches expected 35 but observed 0, completed processes expected 16 but observed 0, service time expected 105706 but observed 0), because the CPUs crashed with a NullPointerException in ReadyQueue.snapshot() while another CPU was removing the head in poll(). The same bug can happen on a real machine even without RaceWindow, because the operating system can preempt a thread at any moment or two cores can run the code at the same time. It is hard to detect because the window is only a few nanoseconds wide, so it fails rarely and randomly and the program can look correct in many runs.
 
 Verification block of the **original starter**:
-```
-[Paste the verification block (or the exception/watchdog message) of the starter here]
-```
+Exception in thread "CPU-4" Exception in thread "CPU-2" Exception in thread "CPU-1" Exception in thread "CPU-3" java.lang.NullPointerException: Cannot read field "next" because "this.next" is null
+        at java.base/java.util.LinkedList$ListItr.next(Unknown Source)
+        at ReadyQueue.snapshot(SchedulerSimulationSync.java:151)
+        at CpuWorker.run(SchedulerSimulationSync.java:280)
+
+═══ VERIFICATION (expected values are computed from YOUR seed) ═══
+  Context switches (quanta executed)     expected 35       observed 0        ✘ MISMATCH
+  Completed processes                    expected 16       observed 0        ✘ MISMATCH
+  Total service time (ms)                expected 105706   observed 0        ✘ MISMATCH
+  Busy-waiting polls (must be 0)         expected 0        observed 0        ✔
+  ✘ At least one check failed (see the ✘ lines above): a race condition or busy waiting is still present.
 
 Verification block of **my final version**:
-```
-[Paste the verification block of your final version here (all lines ✔)]
-```
+═══ VERIFICATION (expected values are computed from YOUR seed) ═══
+  Context switches (quanta executed)     expected 35       observed 35       ✔
+  Completed processes                    expected 16       observed 16       ✔
+  Total service time (ms)                expected 105706   observed 105706   ✔
+  Busy-waiting polls (must be 0)         expected 0        observed 0        ✔
+  ✔ All shared values are consistent.
 
 **Explanation of the timeline:**
 [Explain the lost update step by step.]
@@ -322,12 +333,15 @@ Verification block of **my final version**:
 
 **Your Answer:** *(3-5 sentences)*
 
-[Write your answer here.]
+I used one lock per variable because the three counters are independent, so threads never block each other for no reason and there is no deadlock risk. The ready queue has its own lock so quick statistics updates don’t wait for longer queue operations. Only one thread can hold a lock at a time (finally always unlocks), but a default ReentrantLock is not fair, so bounded waiting isn’t strictly guaranteed.
 
 | Critical section (variable / method) | Lock used | Why it needs protection |
 |---|---|---|
 | [e.g., `ReadyQueue.poll()`] | [lock name] | [reason] |
-| [...] | [...] | [...] |
+| ReadyQueue.add(), poll(), processOf(), snapshot() | ReadyQueue.lock | CPUs add and remove at the same time, and poll() must read and remove the head atomically |
+| SharedStats context switch update and getter | contextSwitchLock | The read-modify-write loses updates |
+| SharedStats completed update and getter | completedLock | A lost update would stop the CPUs from ever finishing |
+| SharedStats service time update and getter | serviceTimeLock | The read-modify-write loses updates |
 
 ## Question 3: Busy Waiting vs Semaphore
 
@@ -337,7 +351,7 @@ Verification block of **my final version**:
 
 **Your Answer:** *(3-5 sentences)*
 
-[Write your answer here.]
+In the starter, a CPU that found the queue empty slept 20 ms and polled again, wasting CPU time (my starter run shows 0 polls only because it crashed first, but my Feature 1 run counted 17). The semaphore’s value is the number of processes waiting in the queue, so it starts at 0 and is 16 right after the 16 initial add() calls, while an idle CPU is blocked in acquire() using no CPU time. The last CPU calls release(totalCPUs) because CPUs blocked in acquire() would otherwise wait forever, since no process will be added again, and the program would never end.
 
 ## Question 4: Classical Problems and Deadlock
 
@@ -348,25 +362,24 @@ Verification block of **my final version**:
 **Your Answer:** *(3-5 sentences)*
 
 **Classical problem and roles**:
-[Name the problem; who is the producer, who is the consumer?]
+This is the producer-consumer (bounded-buffer) problem: the main thread produces the initial processes, the CPUs consume them with poll(), and each CPU also produces when it re-adds an unfinished process
 
 **Semaphores for a bounded queue (name and initial value)**:
-[Name the three semaphores and their initial values.]
+mutex = 1, empty = K (free slots), and full = 0 (filled slots).
 
 **Deadlock scenario and prevention**:
-[Describe the scenario and the necessary condition you would break.]
+If a producer takes mutex and then does wait(empty) on a full queue, it waits for a free slot that only a consumer can create, but the consumer needs the same mutex, so both wait forever. I would break the hold-and-wait condition by always doing wait(empty) or wait(full) before wait(mutex).
 
 ## Summary
 
 **Key concepts I understood through these questions:**
-1.
-2.
-3.
+1. A race condition is a non-atomic read-modify-write, fixed with a lock.
+2. Independent variables can have separate locks to reduce waiting.
+3. A semaphore replaces busy waiting with blocking.
 
 **Concepts I need to study more:**
-1.
-2.
-
+1. Fair locks and bounded waiting.
+2. Deadlock conditions.
 ---
 
 # ✅ Final Checklist (complete before submitting)
@@ -374,40 +387,40 @@ Verification block of **my final version**:
 > ⚠️ **WARNING:** Go through every line. Blackboard does not accept submissions after the deadline, which is **November 14, 2026**.
 
 **Repository**
-- [ ] Repository is **PUBLIC** (Settings → Danger Zone → Visibility)
-- [ ] Repository is renamed to `OS-Assignment3-YourFirstName-YourLastName`
-- [ ] GitHub account uses the university email (`@std.psau.edu.sa`)
+- [ ✅] Repository is **PUBLIC** (Settings → Danger Zone → Visibility)
+- [ ✅] Repository is renamed to `OS-Assignment3-YourFirstName-YourLastName`
+- [ ✅] GitHub account uses the university email (`@std.psau.edu.sa`)
 
 **Code**
-- [ ] Student ID is set in `SchedulerSimulationSync.java` (line 304)
-- [ ] My code is based **only** on the starter of this repository (nothing copied from previous assignments)
-- [ ] Code compiles and runs with no errors, and terminates by itself (no `⛔ WATCHDOG`)
-- [ ] Feature 1 (ready queue lock), Feature 2 (statistics locks) and Feature 3 (semaphore, no busy waiting) all work
-- [ ] **The four verification lines are ✔ in 5 consecutive runs**
-- [ ] Every lock is released in a `finally` block
-- [ ] `RaceWindow`, `Config`, the verification block and the watchdog are **unchanged**
-- [ ] Each feature has clear comments
+- [ ✅] Student ID is set in `SchedulerSimulationSync.java` (line 304)
+- [✅ ] My code is based **only** on the starter of this repository (nothing copied from previous assignments)
+- [✅ ] Code compiles and runs with no errors, and terminates by itself (no `⛔ WATCHDOG`)
+- [✅ ] Feature 1 (ready queue lock), Feature 2 (statistics locks) and Feature 3 (semaphore, no busy waiting) all work
+- [ ✅] **The four verification lines are ✔ in 5 consecutive runs**
+- [✅ ] Every lock is released in a `finally` block
+- [ ✅] `RaceWindow`, `Config`, the verification block and the watchdog are **unchanged**
+- [✅ ] Each feature has clear comments
 
 **Commits**
-- [ ] **At least 4 meaningful commits, ideally 7 or more**
-- [ ] **One commit per feature**
-- [ ] Commits are spread over **different dates** (not all in the last hour)
-- [ ] Everything is **pushed** to GitHub
+- [ ✅] **At least 4 meaningful commits, ideally 7 or more**
+- [ ✅] **One commit per feature**
+- [ ✅] Commits are spread over **different dates** (not all in the last hour)
+- [✅ ] Everything is **pushed** to GitHub
 
 **This file (`MY_WORK.md`)**
-- [ ] Full name and student ID filled in at the top
-- [ ] Development log has **5+ entries** on different dates
-- [ ] Reflection: 4 questions, 5-7 sentences each
-- [ ] Technical answers: 4 questions, 3-5 sentences each, with examples from **your** output (starter output **and** final output pasted in Question 1)
-- [ ] No `[...]` placeholders left
-- [ ] No section headers deleted
+- [ ✅] Full name and student ID filled in at the top
+- [ ✅] Development log has **5+ entries** on different dates
+- [✅ ] Reflection: 4 questions, 5-7 sentences each
+- [ ✅] Technical answers: 4 questions, 3-5 sentences each, with examples from **your** output (starter output **and** final output pasted in Question 1)
+- [ ✅] No `[...]` placeholders left
+- [ ✅] No section headers deleted
 
 **Video**
-- [ ] 2-3 minutes long, named `StudentID_Assignment3_Demo.mp4`
-- [ ] Shows your name, ID, repository, 3 features (and your lock granularity choice), IDE execution with the verification block, one synchronization concept, and commit history
-- [ ] Link is **public** (tested in an incognito window) and pasted in the **Video Link** section above
+- [✅ ] 2-3 minutes long, named `StudentID_Assignment3_Demo.mp4`
+- [ ✅] Shows your name, ID, repository, 3 features (and your lock granularity choice), IDE execution with the verification block, one synchronization concept, and commit history
+- [ ✅] Link is **public** (tested in an incognito window) and pasted in the **Video Link** section above
 
 **Blackboard**
-- [ ] Submit **only** the link to your public GitHub repository
+- [ ✅] Submit **only** the link to your public GitHub repository
 
 > 🎯 **Good luck!** Start early, commit regularly, and make sure you can explain every line you submit.

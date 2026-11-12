@@ -139,7 +139,8 @@ class ReadyQueue {
 
     // Feature 3: counting semaphore = number of processes currently waiting in the ready queue.
     // The initial value is 0 because the queue is EMPTY when the ReadyQueue is created:
-    private final Semaphore availableProcesses = new Semaphore(0);
+    // every add() releases one permit, so the number of permits always matches the queue size.
+    public final Semaphore availableProcesses = new Semaphore(0);   // public: CpuWorker calls acquire()/release() on it
 
     // Add a process to the ready queue (new process, or a process that did not finish its quantum)
     public void add(Process process) {
@@ -161,16 +162,6 @@ class ReadyQueue {
                 Colors.BLUE + " (Priority: " + process.getPriority() + ") added to ready queue" + Colors.RESET +
                 " │ Remaining: " + Colors.YELLOW + process.getRemainingTime() + "ms" + Colors.RESET +
                 " of " + process.getBurstTime() + "ms");
-    }
-
-    // Feature 3: block (sleep, no CPU time wasted) until at least one process is in the queue
-    public void waitForProcess() throws InterruptedException {
-        availableProcesses.acquire();
-    }
-
-    // Feature 3: clean shutdown, give `permits` permits to wake up the CPUs blocked in waitForProcess()
-    public void wakeUpAll(int permits) {
-        availableProcesses.release(permits);
     }
 
     // Remove and return the thread at the head of the queue (or null if the queue is empty)
@@ -321,7 +312,7 @@ class CpuWorker extends Thread {
             // Feature 3: blocking wait on the counting semaphore (replaces the polling loop with sleep(20)).
             // The CPU sleeps here until a process is in the queue, or until the shutdown signal arrives.
             try {
-                readyQueue.waitForProcess();
+                readyQueue.availableProcesses.acquire();
             } catch (InterruptedException e) {
                 return;
             }
@@ -355,7 +346,7 @@ class CpuWorker extends Thread {
             // Feature 3: the CPU that observes that the LAST process has completed wakes up the other CPUs
             // blocked on the semaphore (one permit per CPU), then stops itself. Without this they would wait forever.
             if (SharedStats.getCompletedProcessCount() >= SharedStats.totalProcesses) {
-                readyQueue.wakeUpAll(SharedStats.totalCPUs);
+                readyQueue.availableProcesses.release(SharedStats.totalCPUs);
                 return;
             }
         }
